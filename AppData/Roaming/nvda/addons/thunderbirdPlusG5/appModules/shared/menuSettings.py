@@ -60,7 +60,7 @@ class  Settings() :
 		# adPath is the root of the addon path
 		self.option_messengerWindow ={
 		"TTClean" : _("custom vocalization of rows."),
-		"handleDelete" : _("If custom vocalization, announce the current line after line deletion   (not recommanded for Braille)."),
+		"handleDelete" : _("After deleting a message, force the selection of the new current line."),
 		"TTnoFolderName" : _("Do not say the window and folder names when entering the list."),		"responseMentionGroup" : _("Combine multiple 'RE' mentions into one"),
 		"responseMentionRemove" : _("Delete the 'Re' mentions in the subject column"),
 		"responseMentionDelColon" : _("Delete the colons  in the 'Re:' mentions"),
@@ -108,6 +108,9 @@ class  Settings() :
 		section = self.options["messengerWindow"]
 		if "delayFocusDoc" not in section  : self.options["messengerWindow"].update({"delayFocusDoc":"25"})
 		sharedVars.delayFocusDoc = section.as_int("delayFocusDoc")
+		if "focusStartWithInbox" not in section  :
+			self.options["messengerWindow"].update({"focusStartWithInbox":"False"})
+
 		if "focusMode" not in section  :
 			self.options["messengerWindow"].update({"focusMode":"1"})
 			self.options["messengerWindow"].update({"focusOnStartup":"False"})
@@ -116,6 +119,7 @@ class  Settings() :
 			self.options["messengerWindow"]["focusOnStartup"] = False
 		else : # options are in section, we change their type
 			section["focusOnStartup"]= section.as_bool("focusOnStartup")
+			section["focusStartWithInbox"]= section.as_bool("focusStartWithInbox")
 			section["focusMode"]= section.as_int("focusMode")
 			
 		# words to remove from subject in the message list

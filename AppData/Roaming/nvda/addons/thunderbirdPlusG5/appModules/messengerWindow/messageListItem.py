@@ -10,7 +10,9 @@ from api import copyToClip
 import controlTypes
 from keyboardHandler import KeyboardInputGesture
 from NVDAObjects.IAccessible import IAccessible # , getNVDAObjectFromPoint
-from wx import CallAfter
+import wx
+from wx import CallAfter, CallLater
+from gui import messageBox
 from core import callLater
 from ui import  browseableMessage, message
 import addonHandler,  os, sys
@@ -37,6 +39,8 @@ TTIDefGestures = {
 	"kb:8" : "readTTICell",
 	"kb:9" : "readTTICell",
 	"kb:0" : "readTTICell",
+	# "kb:upArrow" : "selectLine",
+	# "kb:downArrow" : "selectLine",
 	"kb:space" : "readPreview",
 	"kb:shift+space" : "readPreview",
 	"kb:enter" : "openMessage",
@@ -99,12 +103,11 @@ class MessageListItem(IAccessible):
 	timer = None
 	timerCount = 0
 	def initOverlayClass (self):
-		# if sharedVars.lastKey == "del" : message(self.name)
-			
+		# cause issue if controlTypes.State.SELECTED not in self.states : self.doAction()
 		self.bindGestures(TTIDefGestures)
 		if not sharedVars.TTnoTags :
 			self.bindGestures(TTITagGestures)
-		if sharedVars.handleDelete:
+		if sharedVars.handleDelete :
 			self.bindGesture("kb:delete", "deleteMsg")
 
 	def script_sayLine(self, gesture):
@@ -113,9 +116,24 @@ class MessageListItem(IAccessible):
 			browseableMessage (message=sharedVars.curTTRow.replace(", ", "\n"), title = _("Line details") + " - ThunderbirdPlus", isHtml = False)
 		else : # 1 press
 			message(self.name)
+	
 	script_sayLine.__doc__ = _("Message list : One press announces the current line, two presses displays the line text in a window.")
 	script_sayLine.category=sharedVars.scriptCategory
 
+	def script_selectLine(self, gesture) :
+		# if gesture.mainKeyName == "upArrow" : CallAfter(KeyboardInputGesture.fromName("b").send)
+		# elif gesture.mainKeyName == "downArrow" : CallAfter(KeyboardInputGesture.fromName("f").send)
+		try :
+			if gesture.mainKeyName == "upArrow" : o = self.previous
+			else : o = self.next
+		except :
+			self.doAction()
+			return
+		if not o : 
+			beep(120, 10)
+			message(self.name)
+			return
+		o.doAction()
 
 	# read threadTree item  cells  
 	# def script_readTTICell(self,gesture):
@@ -335,9 +353,15 @@ class MessageListItem(IAccessible):
 		return gesture.send()
 		
 	def script_deleteMsg(self,gesture):
-		CallAfter(focusNewRow,self.next, self.parent) 
+		if controlTypes.State.COLLAPSED in self.states :
+			return gesture.send()
+
+		speech.cancelSpeech()
+		message(_("Please wait"))
+		sharedVars.rowDeleting = utils.threadTreeType(self)
 		gesture.send()
-	
+		callLater(50, focusNewRow)
+		
 	def script_sayShortcut (self,gesture):
 		global gSaying
 		rc = getLastScriptRepeatCount() 
@@ -596,19 +620,39 @@ class GetDescObject() :
 			if obj.childCount > 0 :
 				self.run(obj)
 			obj = obj.next
+def closeMenu(startTime) :
+	# if time() - startTime > 2.0 : return beep(100, 40)
+	# if  api.getFocusObject() .role != controlTypes.Role.MENUITEM :
+		# beep(120, 10)
+		# return CallLater(100, closeMenu, startTime)
+	if sharedVars.debug : beep(440, 40)
+	KeyboardInputGesture.fromName("tab").send()
+	speech.setSpeechMode(speech.SpeechMode.talk)
+def focusNewRow() :
+	if not sharedVars.debug : speech.setSpeechMode(speech.SpeechMode.off)
+	KeyboardInputGesture.fromName("shift+tab").send()
+	return
 
-def focusNewRow(obj, oParent) :
-	# beep(440, 10)
-	if obj : speech.speakText(obj.name)
-	else : 
-		sm = utis.getSpeechMode()
-		utis.setSpeechMode_off()
-		KeyboardInputGesture.fromName("upArrow").send()
-		utis.setSpeechMode(sm)
-		KeyboardInputGesture.fromName("downArrow").send()
-
+	# browseableMessage (message="", title="Message deleted")
+	# display TB main menu
+	# KeyboardInputGesture.fromName("f10").send()
+	# callLater(500, closeMenu, time())
+	# o =  utils.focusMenuBar() 
+	# if o : callLater(200, closeMenu, o, time())
+	CallLater(500, closeMenu, time())
+	KeyboardInputGesture.fromName("shift+tab").send()
+	
 # def reportFocusedLine() :
 	# #speech.cancelSpeech()
 	# fo = api.getFocusObject()
 	# if fo.name :
 		# message(fo.name)
+		
+def selLine(gest) :
+	api.processPendingEvents()
+	fo = api.getFocusObject()
+	if controlTypes.State.SELECTED not in fo.states :
+		fo.doAction()
+		message(fo.name)
+		beep(100, 40)
+	

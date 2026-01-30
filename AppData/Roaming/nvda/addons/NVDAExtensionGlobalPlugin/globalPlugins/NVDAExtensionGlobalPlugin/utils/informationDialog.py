@@ -1,6 +1,6 @@
-# globalPlugins\NVDAExtensionGlobalPlugin\utils\informationDialog.py
+# globalPlugins\NVDAExtensionGlobalPlugin\gui\informationDialog.py
 # A part of NVDAExtensionGlobalPlugin add-on
-# Copyright (C) 2016 - 2022 paulber19
+# Copyright (C) 2016 - 2025 paulber19
 # This file is covered by the GNU General Public License.
 # See the file COPYING for more details.
 
@@ -30,7 +30,8 @@ class InformationDialog(wx.Dialog):
 		dialogTitle,
 		informationLabel,
 		information,
-		insertionPointOnLastLine):
+		insertionPointOnLastLine,
+		copyButton):
 		if InformationDialog._instance is not None:
 			return
 		InformationDialog._instance = self
@@ -42,6 +43,7 @@ class InformationDialog(wx.Dialog):
 		self.insertionPointOnLastLine = insertionPointOnLastLine
 		self.informationLabel = informationLabel
 		self.information = information
+		self.copyButton = copyButton
 		self.doGui()
 
 	def doGui(self):
@@ -65,11 +67,13 @@ class InformationDialog(wx.Dialog):
 		# the buttons
 		bHelper = sHelper.addDialogDismissButtons(
 			guiHelper.ButtonHelper(wx.HORIZONTAL))
-		# Translators: label of copy to clipboard button.
-		copyToClipboardButton = bHelper.addButton(
-			self,
-			id=wx.ID_ANY,
-			label=_("Co&py to Clipboard"))
+		if self.copyButton:
+			# Translators: label of copy to clipboard button.
+			copyToClipboardButton = bHelper.addButton(
+				self,
+				id=wx.ID_ANY,
+				label=_("Co&py to Clipboard"))
+			copyToClipboardButton.Bind(wx.EVT_BUTTON, self.onCopyToClipboardButton)
 		closeButton = bHelper.addButton(
 			self,
 			id=wx.ID_CLOSE,
@@ -81,7 +85,6 @@ class InformationDialog(wx.Dialog):
 		mainSizer.Fit(self)
 		self.SetSizer(mainSizer)
 		# events
-		copyToClipboardButton.Bind(wx.EVT_BUTTON, self.onCopyToClipboardButton)
 		closeButton.Bind(wx.EVT_BUTTON, lambda evt: self.Destroy())
 		self.tc.SetFocus()
 		self.SetEscapeId(wx.ID_CLOSE)
@@ -107,7 +110,7 @@ class InformationDialog(wx.Dialog):
 	@classmethod
 	def run(
 		cls, parent, dialogTitle,
-		informationLabel, information, insertionPointOnLastLine=False):
+		informationLabel, information, insertionPointOnLastLine=False, copyButton=True):
 		if isOpened(InformationDialog):
 			return
 		if parent is None:
@@ -117,7 +120,8 @@ class InformationDialog(wx.Dialog):
 			dialogTitle,
 			informationLabel,
 			information,
-			insertionPointOnLastLine)
+			insertionPointOnLastLine,
+			copyButton)
 		d.CentreOnScreen()
 		d.Show()
 		if parent is None:

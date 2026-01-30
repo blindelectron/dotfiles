@@ -3,9 +3,10 @@ import addonHandler
 addonHandler.initTranslation()
 import controlTypes, api
 from speech import  speakMessage, speakSpelling, cancelSpeech, setSpeechMode, SpeechMode
+
 import braille
 from ui import message
-from time import time
+from time import time, sleep
 from tones import beep
 from wx  import  CallLater, CallAfter
 import sharedVars
@@ -20,6 +21,62 @@ def brailleMessage(text, speak=False) :
 	if speak : 
 		speakMessage("Braille : ")
 	braille.handler.message(text)
+
+# def focusMenuBar() :
+	# # Path : Role-FRAME| i33, Role-TOOLBAR, , IA2ID : toolbar-menubar | i0, Role-MENUBAR, , IA2ID : mail-menubar | i0, Role-MENUITEM, , IA2ID : menu_File 
+	# o =  api.getForegroundObject()
+	# o = o.getChild(30)
+	# while o :
+		# if o.role == controlTypes.Role.TOOLBAR :
+			# break
+		# o = o.next
+
+	# if not o : return None
+	# o = o.firstChild.firstChild
+	# if not o :  return None
+	# if o.role == controlTypes.Role.MENUITEM : 
+		# o.doAction()
+		# o.setFocus()
+		# return o
+
+def threadTreeType(oRow) :
+	retVal = 10 # normal
+	# 2025 04 24 
+	o= oRow.firstChild
+	while o :
+		if hasIA2Class(o, "locationcol-column") :
+			retVal = 20 # unified
+			break
+		o = o.next
+	try :
+		if  oRow.next :
+			retVal += 1
+	except :
+		pass
+	return retVal
+	
+def focusTTRow() :
+	if sharedVars.rowDeleting  == 0 : 
+		setSpeechMode(SpeechMode.talk)
+		return
+	if sharedVars.rowDeleting < 20  : # normal TT
+		sharedVars.rowDeleting = 0
+		setSpeechMode(SpeechMode.talk)
+		CallAfter(KeyboardInputGesture.fromName("tab").send)
+		return
+	# 20 or 21  = unified folder		
+	hasNext = True if 	sharedVars.rowDeleting == 21 else False
+	sharedVars.rowDeleting = 0
+	setSpeechMode(SpeechMode.talk)
+	message(_("Please wait"))
+	KeyboardInputGesture.fromName("tab").send()
+	if hasNext  :
+		CallLater(500, KeyboardInputGesture.fromName("downArrow").send)
+		CallLater(700, KeyboardInputGesture.fromName("upArrow").send)
+	else :
+		CallLater(500, KeyboardInputGesture.fromName("upArrow").send)
+		CallLater(700, KeyboardInputGesture.fromName("downArrow").send)
+
 
 def hasID(obj, IA2ID) :
 	# IA2ID can be the n first chars of the ID
@@ -40,6 +97,10 @@ def getIA2Attr(obj,attribute_value=False,attribute_name ="id"):
 	r =obj.IA2Attributes[attribute_name]
 	return r if not attribute_value  else r ==attribute_value
 
+def getTVItemLevel(obj) :
+	if obj.role != controlTypes.Role.TREEVIEWITEM : return 0
+	return obj.positionInfo['level']
+	
 def isFolderTreeItem(fti, ID="") :
 	if fti.role != controlTypes.Role.TREEVIEWITEM : return False 
 	if not ID :
@@ -72,7 +133,7 @@ def isQuickfilterBar(o) :
 
 def checkObj(o, context="", oPrevious=None) :
 	if o : 
-		# sharedVars.log(o, "Passed "+ context)
+		if sharedVars.debug : sharedVars.log(o, "Passed "+ context)
 		return True
 	# message("Internal Error : object  is None  : " + context) 
 	if sharedVars.debug : sharedVars.log(o, "Not passed : " + context) 
@@ -80,6 +141,18 @@ def checkObj(o, context="", oPrevious=None) :
 		# sharedVars.log(oPrevious, "Previous : ") 
 	return  False
 
+def findChildByRole(obj, role) : 
+	if not obj : return None
+	try : # Finally
+		obj = obj.firstChild
+		while obj :
+			if obj.role == role :
+				return obj
+			obj = obj.next
+		return None
+	finally :
+		if sharedVars.debug :
+			sharedVars.log(obj, "findChildByRole expected " + str(role.displayString))
 
 def findChildByRoleID(obj,role, ID, startIdx=0) : # attention : controlTypes roles
 	if obj  is None : return None
@@ -95,7 +168,7 @@ def findChildByRoleID(obj,role, ID, startIdx=0) : # attention : controlTypes rol
 			pass
 		while o:
 			if o.role == role :
-				if  hasID(o, ID) :
+				if hasID(o, ID) :
 					if ID == "tabpanelcontainer" : sharedVars.groupingIdx = startIdx 
 					# sharedVars.log(o, "toolbar found ")
 					return o
@@ -189,10 +262,10 @@ def getPropertyPage(oFrame=None) :
 	# 24.06.02 : level 2,   2 of 2, role.PROPERTYPAGE, IA2ID : mail3PaneTab1 Tag: vbox, States : , childCount  : 1 Path : r-FRAME, | i31, r-GROUPING, , IA2ID : tabpanelcontainer | i2, r-PROPERTYPAGE, , IA2ID : mail3PaneTab1 , IA2Attr : id : mail3PaneTab1,
 	if oFrame : o = oFrame
 	else :o = api.getForegroundObject()
+	if not checkObj(o, "getPropertyPage frame") : return None 
 	# Role-FRAME| i32, Role-GROUPING, , IA2ID : tabpanelcontainer 
 	o = findChildByRoleID(o,controlTypes.Role.GROUPING, "tabpanelcontainer", 30)
-	if not checkObj(o, "PropertyPage from  fg") : return None 
-	# sharedVars.log(o, "grouping")
+	if not checkObj(o, "getPropertyPage, grouping") : return None 
 	# propPage in tab1, offscreen :  level 2,   2 of 4, Role.PROPERTYPAGE, IA2ID : mail3PaneTab1 Tag: vbox, States : , OFFSCREEN, childCount  : 1 Path : Role-FRAME| i32, Role-GROUPING, , IA2ID : tabpanelcontainer | i2, Role-PROPERTYPAGE, , IA2ID : mail3PaneTab1 , 
 	# propPage in tab 3 :level 2,   4 of 4, Role.PROPERTYPAGE, IA2ID : mail3PaneTab3 Tag: vbox, States : , childCount  : 1 Path : Role-FRAME| i32, Role-GROUPING, , IA2ID : tabpanelcontainer | i4, Role-PROPERTYPAGE, , IA2ID : mail3PaneTab3 , IA2Attr : tag : vbox, class : deck-selected, id : mail3PaneTab3, display : flex, , Actions : click ancestor,  ;
 	o = o.firstChild
@@ -202,10 +275,10 @@ def getPropertyPage(oFrame=None) :
 			# ID =  str(getIA2Attr(o))
 			# if "mail3PaneTab" in ID :
 			if hasID(o, "mail3PaneTab") : # partial ID
-				checkObj(o, "getPropPage ")
+				checkObj(o, "getPropPage , befor return o")
 				return o
 		o = o.next
-	checkObj(o, "getPropPage end")
+	checkObj(o, "getPropPage before return None")
 	return None
 
 def getFolderTreeFromFG(focus=False, pp=None) :
@@ -251,19 +324,51 @@ class RecurseTree() :
 
 # focus ThreadTree from FolderTree
 def focusTTFromFT(oFocused, mode) :
-	utis.disableOvl(False)
-	# utis.beepRepeat(440, 20, 2)
-	utis.setSpeechMode_off()
-	sharedVars.speechOff = True # speech restored in see event_gainFocus
-	KeyboardInputGesture.fromName("f6").send()
-	sleep(.2)
-	if  mode == 1 : # last message
-		KeyboardInputGesture.fromName("end").send()
-	elif mode == 2 : # first message 
-		KeyboardInputGesture.fromName("home").send()
-	elif	 mode > 2 : # first unread message 
-		KeyboardInputGesture.fromName("n").send()
-	# CallAfter(utis.speech.setSpeechMode, SpeechMode.talk)
+	try : # finally
+		utis.disableOvl(True)
+		# utis.beepRepeat(440, 20, 2)
+		utis.setSpeechMode_off()
+		# sharedVars.speechOff = True # speech restored in see event_gainFocus
+		# if	 mode > 2 : # first unread message 
+			# KeyboardInputGesture.fromName("n").send()
+			# return True
+
+		# the closest common ancestor of folderTree and ThreadTree is: the rol internal frame  object
+		oFocused = oFocused.parent
+		o = None
+		while oFocused :
+			if oFocused.role == controlTypes.Role.INTERNALFRAME :
+				if hasID(oFocused, "mail3PaneTabBrowser") :
+					o = oFocused
+					break
+			oFocused =  oFocused.parent
+		if not o : return False
+		
+		o = o.firstChild # grouping
+		# | i2, SECTION, , IA2ID : threadPane | i2, TEXTFRAME, , IA2ID : threadTree , 
+		o = findChildByRoleID(o, controlTypes.Role.SECTION, "threadPane")
+		o = findChildByRoleID(o, controlTypes.Role.TEXTFRAME, "threadTree")
+		o = o.firstChild.firstChild # first level table 
+		while o :
+			if o.role in (controlTypes.Role.TABLE, controlTypes.Role.LIST) :
+				break
+			o = o.next
+		if not o :
+			return False
+		o.setFocus()
+		# utis.speech.setSpeechMode(SpeechMode.talk)
+		setSpeechMode(SpeechMode.talk)
+		if  mode == 1 : # last message
+			KeyboardInputGesture.fromName("end").send()
+		elif  mode == 2 : # first message
+			KeyboardInputGesture.fromName("home").send()
+		elif	 mode > 2 : # first unread message 
+			KeyboardInputGesture.fromName("n").send()
+		return True
+	finally :
+		utis.disableOvl(False)
+		# utis.speech.setSpeechMode(SpeechMode.talk)
+		setSpeechMode(SpeechMode.talk)
 
 def focusThreadTree(focus=False, fromFolderTree=False) :
 	# disabled because speech is not always restored in event_gainFocus -> utis.setSpeechMode_off()
@@ -284,7 +389,8 @@ def focusThreadTree(focus=False, fromFolderTree=False) :
 		fo.setFocus()
 		fo = getFolderTreeFromFG(focus=False)
 		if not fo :
-			CallAfter(utis.speech.setSpeechMode, SpeechMode.talk)
+			# CallAfter(utis.speech.setSpeechMode, SpeechMode.talk)
+			CallAfter(setSpeechMode, SpeechMode.talk)
 			return
 		fo.setFocus()
 		oTimer = GetFocusObjTimer(roleList=[controlTypes.Role.TREEVIEWITEM], stateSelected=True, interval=500, maxElapsed=4000, callBack=focusTTFromFT, cbParam=focusMode)
@@ -518,7 +624,7 @@ def getMessageStatus128(infoIdx=-1)  :
 		sharedVars.objLooping = prevLooping
 
 def getMessageStatus(infoIdx=-1)  :
-	if sharedVars.TBMajor < 128 :
+	if utis.TBMajor() < 128 :
 		return getMessageStatus115(infoIdx)
 	else :
 		return getMessageStatus128(infoIdx)
@@ -529,12 +635,22 @@ def silentSendKey(key) :
 def getMessagePane() : # in the main window
 	# level 8,         15 of 15, Role.INTERNALFRAME, IA2ID : messagepane Tag: browser, States : , FOCUSABLE, childCount  : 1 Path : Role-FRAME| i32, Role-GROUPING, , IA2ID : tabpanelcontainer | i2, Role-PROPERTYPAGE, , IA2ID : mail3PaneTab1 
 	o = getPropertyPage()
+	if sharedVars.debug : sharedVars.log(o, "getPreviewPane, Expected propertyPage")
 	if not o : return None
 	# | i0, Role-INTERNALFRAME, , IA2ID : mail3PaneTabBrowser1 | i0, Role-GROUPING,  
-	try : o = o.firstChild.firstChild
-	except : return None
-	# | i4, Role-SECTION, , IA2ID : messagePane 
-	o = findChildByRoleID(o, controlTypes.Role.SECTION, "messagePane") 
+	o = findChildByRoleID(o, controlTypes.Role.INTERNALFRAME, "mail3PaneTabBrowser") 
+	if not checkObj(o, "getPreviewPane, expected INTERNALFRAME mail3PaneTabBrowser1") : return None 
+
+	o = findChildByRole(o, controlTypes.Role.GROUPING) 
+	if not checkObj(o, "getPreviewPane, expected Grouping") : return None 
+
+	if utis.TBMajor() < 135 :
+		# | i4, Role-SECTION, , IA2ID : messagePane 
+		o = findChildByRoleID(o, controlTypes.Role.SECTION, "messagePane") 
+	else :
+		# i4, Role-TEXTFRAME, , IA2ID : messagePane 
+		o = findChildByRoleID(o, controlTypes.Role.TEXTFRAME, "messagePane") 
+	if sharedVars.debug :  sharedVars.log(o, "getMessagePane, expected messagePane")
 	return o
 
 def getMessageHeaders(msgPane=None) :
@@ -582,12 +698,52 @@ def getPreviewDoc() :
 		return o, False
 	return None, False
 	
+def whichMessagePane(obj, landMark) :
+	if not obj :
+		beep(100, 40)
+		return  "error objFocusNone", None
+	# preview, path :  Role-FRAME| i35, Role-GROUPING, , IA2ID : tabpanelcontainer | i2, Role-PROPERTYPAGE, , IA2ID : mail3PaneTab1 | i0, Role-INTERNALFRAME, , IA2ID : mail3PaneTabBrowser1 | i0, Role-GROUPING, , IA2ID : paneLayout | i4, Role-TEXTFRAME, , IA2ID : messagePane | i0, Role-INTERNALFRAME, , IA2ID : messageBrowser | i0, Role-GROUPING,  | i14, Role-LANDMARK, , IA2ID : messageHeader | i0, Role-SECTION, , IA2ID : headerSenderToolbarContainer | i0, Role-TOOLBAR, , IA2ID : header-view-toolbox | i0, Role-BUTTON, , IA2ID : hdrReplyButton  
+	# separ window,  Path : Role-FRAME| i4, Role-INTERNALFRAME, , IA2ID : messageBrowser | i0, Role-GROUPING,  | i14, Role-LANDMARK, , IA2ID : messageHeader | i0, Role-SECTION, , IA2ID : headerSenderToolbarContainer | i0, Role-TOOLBAR, , IA2ID : header-view-toolbox | i0, Role-BUTTON, , IA2ID : hdrReplyButton 
+	# search for LANDMARK, ID : messageHeader
+	o = obj
+	if landMark :
+		found = False
+		while o : 
+			# sharedVars.log(o, "search landMark in messagepane")
+			role = o.role
+			if role == controlTypes.Role.LANDMARK and hasID(o, "messageHeader") :
+				found = True
+				break
+			if role == controlTypes.Role.INTERNALFRAME and hasID(o, "multiMessageBrowser") :
+				return "preview", o
+			try : o = o.parent
+			except : break
+		#end while
+		# sharedVars.log(o, "Expected landMark")
+		if not found  :
+			return "not landmark", None
+	# preview, path :  Role-FRAME| i35, Role-GROUPING, , IA2ID : tabpanelcontainer | i2, Role-PROPERTYPAGE, , IA2ID : mail3PaneTab1 | i0, Role-INTERNALFRAME, , IA2ID : mail3PaneTabBrowser1 | i0, Role-GROUPING, , IA2ID : paneLayout | i4, Role-TEXTFRAME, , IA2ID : messagePane | i0, Role-INTERNALFRAME, , IA2ID : messageBrowser | i0, Role-GROUPING,  | i14, Role-LANDMARK, , IA2ID : messageHeader | i0, Role-SECTION, , IA2ID : headerSenderToolbarContainer | i0, Role-TOOLBAR, , IA2ID : header-view-toolbox | i0, Role-BUTTON, , IA2ID : hdrReplyButton  
+	# separ window,  Path : Role-FRAME| i4, Role-INTERNALFRAME, , IA2ID : messageBrowser | i0, Role-GROUPING,  | i14, Role-LANDMARK, , IA2ID : messageHeader | i0, Role-SECTION, , IA2ID : headerSenderToolbarContainer | i0, Role-TOOLBAR, , IA2ID : header-view-toolbox | i0, Role-BUTTON, , IA2ID : hdrReplyButton 
+	while o :
+		role = o.role 
+		# sharedVars.log(o, "parent in previewPane")
+		if role == controlTypes.Role.GROUPING and hasID(o, "tabpanelcontainer") :
+			return "preview", o
+		if role == controlTypes.Role.INTERNALFRAME and o.parent.role ==  controlTypes.Role.FRAME :
+			return "msgWindow", o
+		try  : o = o.parent
+		except : break
+
+	return "NotFound", None
+	
 def isSeparMsgWnd() :
 	o =api.getForegroundObject()
+	# sharedVars.log(o, "isSeparMsgWnd fg")
 	# Path : Role-FRAME| i4, Role-INTERNALFRAME, , IA2ID : messageBrowser | i0, Role-GROUPING,  | i15, Role-INTERNALFRAME, , IA2ID : messagepane | i0, Role-DOCUMENT,  , 
 	o = findChildByRoleID(o,controlTypes.Role.INTERNALFRAME, "messageBrowser")
+	# sharedVars.log(o, "isSeparMsgWnd, internal frame messageBrowser")
 	if not o :  return False
-	sharedVars.curFrame = sharedVars.curTab= "1messageWnd"
+	sharedVars.curFrame = sharedVars.curTab= "message"
 	return True
 
 def getOneMessageGrouping() :
@@ -595,11 +751,10 @@ def getOneMessageGrouping() :
 	# Path : Role-FRAME| i4, Role-INTERNALFRAME, IA2ID : messageBrowser | i0, Role-GROUPING,  | i15, Role-INTERNALFRAME, , IA2ID : messagepane | i0, Role-DOCUMENT,  , 
 	o = findChildByRoleID(o,controlTypes.Role.INTERNALFRAME, "messageBrowser")
 	if not o :  return None
-	sharedVars.curFrame = sharedVars.curTab= "1messageWnd"
+	sharedVars.curFrame = sharedVars.curTab= "message"
 	return o.firstChild
 
 	# for message list item
-from time import sleep
 from keyboardHandler import KeyboardInputGesture
 import winUser
 
@@ -886,9 +1041,9 @@ def getAttachment(oFocus=None, repeats=0) :
 		if repeats > 0 and o.role != controlTypes.Role.GROUPING : return beep(100, 10)
 	elif hasID(oFocus, "threadTree") :
 		o = getMessagePane()
-		# sharedVars.log(o, "in mainWindow , is messagePane ?")
+		# sharedVars.log(o, "in mainWindow , expected messagePane")
 		o = o.firstChild.firstChild
-		# sharedVars.log(o, "in mainWindow , is Grouping ?")
+		# sharedVars.log(o, "in mainWindow , expected Grouping")
 	else : return beep(100, 30)
 	
 	# common to list and separate reading window
@@ -1081,6 +1236,7 @@ def listAscendants(last=-4, o=None, title="** List of ascendants") :
 	lev = 0
 	while o  and lev >= last :
 		if sharedVars.debug : sharedVars.log(o, "level " + str(lev))
+		if o.role in (controlTypes.Role.FRAME, controlTypes.Role.DIALOG) : return
 		lev -= 1
 		o = o.parent
 

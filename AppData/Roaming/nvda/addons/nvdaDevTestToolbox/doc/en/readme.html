@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="stylesheet" type="text/css" href="../style.css" media="screen">
-<title>NVDA Dev & Test Toolbox 6.3</title>
+<title>NVDA Dev & Test Toolbox 7.0</title>
 </head>
 <body>
 <h1>NVDA Dev &amp; Test Toolbox</h1>
@@ -18,22 +18,28 @@
 <li>An enhanced restart dialog to specify some extra options when restarting NVDA.</li>
 <li>Various features related to logged errors.</li>
 <li>An object property explorer.</li>
-<li>An extended script description mode: when enabled input help mode report information on scripts that have no description.</li>
+<li>Script tools: an extended script description mode and a script opener.</li>
 <li>Commands to help log reading and analyzing.</li>
 <li>Backups of old logs</li>
 <li>In the Python console workspace, a function to open the source code of an object.</li>
 <li>A custom startup script for the Python console</li>
 <li>A command to log the stack trace of the speech.speak function.</li>
+<li>A command to reverse translate the items of the interface.</li>
 </ul>
+<h2>Commands</h2>
+<p>This add-on uses layered commands for all of the new commands it adds.
+The entry point for these commands is <code>NVDA+X</code>; thus all the commands should be executed by <code>NVDA+X</code> followed by another single letter or gesture.
+You can list all the available layered commands pressing <code>NVDA+X, H</code>.</p>
+<p>For the commands that you use more frequently, you can also define a direct gesture in the input gesture dialog.</p>
 <h2>Enhanced restart dialog</h2>
-<p>The NVDA+shift+Q command opens a dialog to specify some extra options before restarting NVDA.
+<p>The <code>NVDA+X, Q</code> command opens a dialog to specify some extra options before restarting NVDA.
 The options that can be specified correspond to the <a href="https://www.nvaccess.org/files/nvda/documentation/userGuide.html#CommandLineOptions">command line options</a> that can be used with <code>nvda.exe</code>, e.g. <code>-c</code> for config path, <code>--disable-addons</code> to disable add-ons, etc.</p>
 <h2>Features related to logged errors</h2>
 <h3>Report last logged error</h3>
-<p>Pressing NVDA+shift+alt+E allows to report the last error logged without needing to open the log. A second press clears the memorized last error.</p>
+<p>Pressing <code>NVDA+X, E</code> allows to report the last error logged without needing to open the log. A second press clears the memorized last error.</p>
 <h3>Play a sound for logged errors</h3>
 <p>The <a href="https://www.nvaccess.org/files/nvda/documentation/userGuide.html#PlayErrorSound">"Play a sound for logged errors" setting</a> has been introduced in NVDA 2021.3 and allows to specify if NVDA will play an error sound in case an error is logged.</p>
-<p>This add-on provides an additional command (NVDA+control+alt+E) to toggle this setting.
+<p>This add-on provides an additional command (<code>NVDA+X, shift+E</code>) to toggle this setting.
 You can choose:</p>
 <ul>
 <li>"Only in test versions" (default) to make NVDA play error sounds only if the current NVDA version is a test version (alpha, beta or run from source).</li>
@@ -45,22 +51,30 @@ The checkbox in the Advanced settings panel is not backported however.</p>
 <p>This feature allows to report some properties of the current navigator object without opening the log viewer.</p>
 <p>To list the properties of an object, move the navigator object to it and use the following commands:</p>
 <ul>
-<li>Selects the previous property and reports it for the navigator object.</li>
-<li>Selects the next property and reports it for the navigator object.</li>
-<li>Reports the currently selected property for the navigator object; two presses displays this information in a browseable message.</li>
+<li><code>NVDA+X, upArrow</code>: Selects the previous property and reports it for the navigator object.</li>
+<li><code>NVDA+X, downArrow</code>: Selects the next property and reports it for the navigator object.</li>
+<li><code>NVDA+X, N</code>: Reports the currently selected property for the navigator object</li>
+<li><code>NVDA+X, shift+N</code>: Displays the currently selected property for the navigator object in a browseable message</li>
 </ul>
 <p>The list of the supported properties is the following:
 name, role, state, value, windowClassName, windowControlID, windowHandle, location, Python class, Python class mro.</p>
 <p>When using object navigation commands, you can also choose to have the currently selected property reported instead of NVDA usual object reporting.
-A toggle command allows to switch between this custom reporting of objects and NVDA usual reporting.</p>
+A toggle command, <code>NVDA+X, control+N</code>, allows to switch between this custom reporting of objects and NVDA usual reporting.</p>
 <p>For exemple, you may select "windowClassName" property and enable custom object reporting.
 Then when moving the navigator object to next or previous object, you will hear the object's windowClassName instead of usual reporting.</p>
-<p>All the commands of the Object property explorer are unassigned by default; you will have to assign them a shortcut in the Input gesture dialog to use them.</p>
-<h2>Extended script description mode</h2>
+<h2>Script tools</h2>
+<h3>The script opener</h3>
+<p>The script opener command allows to open the code of a script knowing its gesture.</p>
+<p>To use it press <code>NVDA+x, C</code> and then the gesture of the script which you want to see the code of.
+For example to see the code of the script that reports the title of the foreground window, press <code>NVDA+X, C</code> and then <code>NVDA+T</code>.</p>
+<p>For this feature to work, you need to have configured your <a href="#settingsOpenCommand">favorite editor's command</a> in the add-on's settings.
+If you are not running NVDA from source and want to open NVDA's code, the <a href="#settingsNvdaSourcePath">location of NVDA source code</a> should also have been configured.</p>
+<h3>Extended script description mode</h3>
+<p>The extended script description mode allows to have reported information on scripts without description in input help mode.</p>
 <p>When the Extended script description mode is active, the input help mode (NVDA+1) is modified as follows.
 If a script has no description, the script's name and class are reported.
 If a script has a description, its description is reported as usual.
-The gesture to activate or deactivate this feature is NVDA+control+alt+D.</p>
+The gesture to activate or deactivate this feature is <code>NVDA+X, D</code>.</p>
 <p>Executing a gesture bound to a script without description in input help mode also create an entry for this script in the gesture management dialog.
 This entry is located in a dedicated category called "Scripts without description (modify at your own risk!)".
 This allow to easily add, delete or change the native NVDA gestures for these script.
@@ -72,21 +86,21 @@ For example the script script_toggleItalic on NVDAObjects.window.winword.WordDoc
 To have the control+shift+I result reported by NVDA as control+I, you should perform the following steps:</p>
 <ul>
 <li>Open a Word document.</li>
-<li>Enable the extended script description mode with NVDA+control+alt+D.</li>
+<li>Enable the extended script description mode with <code>NVDA+X, D</code>.</li>
 <li>Enter input help mode with NVDA+1.</li>
 <li>Press control+I to report the italic script and have it added in the gesture dialog.</li>
 <li>Exit input help mode with NVDA+1.</li>
 <li>Open the input gestures dialog.</li>
 <li>In the category "Scripts without description (modify at your own risk!)", select the command "toggleItalic on NVDAObjects.window.winword.WordDocument".</li>
 <li>Add the control+shift+I shortcut and validate.</li>
-<li>If you want, exit the extended script description mode with NVDA+control+alt+D.</li>
+<li>If you want, exit the extended script description mode with <code>NVDA+X, D</code>.</li>
 </ul>
 <p>Known bug: A script added for a specific class is visible even if gesture manager is opened in another context.</p>
 <h2>Log reading and analyzing features</h2>
 <p><a id="logPlaceMarkers"></a></p>
 <h3>Place markers in the log</h3>
 <p>While testing or working, you may want to mark a specific moment in the log, so that you can turn to it easily later when reading the log.
-To add a marker message in the log, press NVDA+control+K.
+To add a marker message in the log, press <code>NVDA+X, K</code>.
 A message as follows will be logged at INFO level:<br />
 <code>-- NDTT marker 0 --</code><br />
 You can add as many markers as you want in the log.
@@ -94,8 +108,8 @@ The marker's number will be incremented each time you place a marker in the log;
 <h3>Log reader mode</h3>
 <p>A log reader mode provides commands to ease log reading and analyzing.
 In the log viewer window the log reader is enabled by default, thus log reading commands are available immediately.
-In another text reading area such as an editor (e.g. Notepad++) or a webpage (e.g. GitHub issue), you need to press NVDA+control+alt+L to enable log reader mode and use its commands.
-When you are done with log reading and analyzing tasks, you can disable again NVDA+control+alt+L to disable the log reader mode.</p>
+In another text reading area such as an editor (e.g. Notepad++) or a webpage (e.g. GitHub issue), you need to press <code>NVDA+X, L</code> to enable log reader mode and use its commands.
+When you are done with log reading and analyzing tasks, you can disable again <code>NVDA+X, L</code> to disable the log reader mode.</p>
 <p>The commands available in log reader mode are described hereafter.</p>
 <p><a id="logReaderQuickNavigationCommands"></a></p>
 <h4>Quick navigation commands</h4>
@@ -137,7 +151,7 @@ If you have <a href="https://addons.nvda-project.org/addons/instantTranslate.en.
 <p>You may want to open the file containing this code to understand the context of the traceback or the logged message.
 Just press C to open this file.</p>
 <p>For this feature to work, you need to have configured your <a href="#settingsOpenCommand">favorite editor's command</a> in the add-on's settings.
-If you are not running NVDA from source, the <a href="#settingsNvdaSourcePath">location of NVDA source code</a> should also have been configured.</p>
+If you are not running NVDA from source and want to open NVDA's code, the <a href="#settingsNvdaSourcePath">location of NVDA source code</a> should also have been configured.</p>
 <p><a id="oldLogsBackup"></a></p>
 <h2>Backup of old logs</h2>
 <p>NVDA already provides a backup of the log of the previous session of NVDA; the file is called <code>nvda-old.log</code>.
@@ -145,15 +159,19 @@ Sometimes however you may want to access older logs, e.g. because you have had t
 This add-on allows you to configure if you want to backup old logs and how many of them; this is done in the <a href="#settingsLogsBackup">add-on's settings</a>.</p>
 <p>A log manager dialog allows to view the backed up logs.
 It can be opened going to NVDA menu -&gt; Tools -&gt; Logs manager
-In this dialog, you can see the list of all the backup logs, open or delete them.
-To be able to open a log, you should first have configured the <a href="#settingsOpenCommand">Command to open a file in your favorite editor</a>.</p>
+In this dialog, you can see the list of all the backup logs and perform various actions on the selected log:
+* open it (press <code>Enter</code>)
+* delete it (press <code>Delete</code>)
+* copy the log file (press <code>control+C</code>)</p>
+<p>You can also select multiple logs to perform an actions on all of them.</p>
+<p>To be able to open a log, you should first have configured the <a href="#settingsOpenCommand">Command to open a file in your favorite editor</a>.</p>
 <h2>Python console extension</h2>
 <p><a id="pythonConsoleOpenCodeFile"></a></p>
 <h3><code>openCodeFile</code> function</h3>
 <p>In the console, you can call the following function to view the source code that defines the variable <code>myVar</code>:<br />
 <code>openCodeFile(myVar)</code>  </p>
 <p>For this feature to work, you need to have configured your <a href="#settingsOpenCommand">favorite editor's command</a> in the add-on's settings.
-If you are not running NVDA from source, the <a href="#settingsNvdaSourcePath">location of NVDA source code</a> should also have been configured.</p>
+If you are not running NVDA from source and want to open NVDA's code, the <a href="#settingsNvdaSourcePath">location of NVDA source code</a> should also have been configured.</p>
 <p>The <code>openCodeFile</code> functions can be called on objects defined in NVDA's code or on objects defined by add-ons.
 It cannot be called on objects whose source code is not available such as python builtins.</p>
 <p>If you have not yet imported the object in the console, you can also pass its name as parameter to the <code>openCodeFile</code> function.</p>
@@ -186,10 +204,26 @@ ocf = openCodeFile
 For example: <code>C:\Users\myUserName\AppData\Roaming\nvda\ndtt\consoleStartup.py</code></p>
 <h2>Log the stack trace of the speech function</h2>
 <p>Sometimes, you may want to see which part of the code is responsible for speaking something.
-For this, you can enable the stack trace logging of the speech function pressing NVDA+control+alt+S.
+For this, you can enable the stack trace logging of the speech function pressing <code>NVDA+X, S</code>.
 Each time NVDA speaks, a corresponding stack trace will be logged in the log.</p>
 <p>Note: You may modify the script's file directly to patch another function.
 See all instructions in the file for details on usage.</p>
+<p><a id="reverseTranslationCommand"></a></p>
+<h2>Reverse translation command</h2>
+<p>Many testers use NVDA in another language than English.
+But when reporting test results on GitHub, the description of the modified options or the messages reported by NVDA should be written in English.
+Its quite frustrating and time consuming to have to restart NVDA in English to check the exact wording of the options or messages.</p>
+<p>To avoid this, the add-on provides a reverse translation command, <code>NVDA+X, R</code> allowing to reverse translate NVDA's interface such as messages, control labels in the GUI, etc.
+This command uses NVDA's gettext translation to try to reverse translate the last speech.
+More specifically, the first string of the last speech sequence is reverse translated.</p>
+<p>For example, in French NVDA, if I arrow down to the Tools menu named "Outils", NVDA will say "Outils  sous-Menu  o" which stands for "Tools  subMenu  o".
+If I press the reverse translation command just after that, NVDA will reverse translate "Outils" to "Tools".</p>
+<p>Looking at the log afterwards, we can find the following lines:
+<code>IO - speech.speech.speak (23:38:24.450) - MainThread (2044):
+Speaking ['Outils', 'sous-Menu', CharacterModeCommand(True), 'o', CharacterModeCommand(False), CancellableSpeech (still valid)]</code>
+This confirms that "Outils was the first string in the speech sequence.</p>
+<p>In case the reverse translation leads to two or more possible results, a context menu is opened listing all the possibilities.</p>
+<p>The result of the reverse translation is also copied to the clipboard if the corresponding <a href="#settingsCopyReverseTranslation">option</a> is enabled, which is the default value.</p>
 <p><a id="settings"></a></p>
 <h2>Settings</h2>
 <p>Some features of the add-on may require a specific configuration.
@@ -222,7 +256,21 @@ Of course, replace the path of NVDA source with the correct one.</p>
 <p>The combobox Backup of old logs allows to enable or disable the <a href="#oldLogsBackup">feature</a>.
 If it is enabled, you can also specify below in "Limit the number of backups" the maximum number of backups you want to keep.
 These settings only take effect at next NVDA startup when the backup takes place.</p>
+<p><a id="settingsCopyReverseTranslation"></a></p>
+<h3>Copy reverse translation to clipboard</h3>
+<p>This option allows to choose if the <a href="#reverseTranslationCommand">reverse translation command</a> also copies its result to the clipboard.</p>
 <h2>Change log</h2>
+<h3>Version 7.0</h3>
+<ul>
+<li>Layered commands have been introduced; the entry point is <code>NVDA+X</code>.
+The existing commands have been modified accordingly.</li>
+<li>A new command (<code>NVDA+X, R</code>) to reverse translate the last spoken message.</li>
+<li>A new command (<code>NVDA+X, C</code>) to open the source code of the script associated to the next pressed gesture.</li>
+<li>Added speech on demand support.</li>
+<li>The log manager now allows more actions, either with the dedicated buttons in the dialogs or using keyboard shortcuts in the list: <code>enter</code> to open the log, <code>control+C</code> to copy the log file and <code>delete</code> to delete a log file.</li>
+<li>The sorting order in the log manager has been reversed (most recent log on top).</li>
+<li>Fixed an issue when trying to open a Python module with openCodeFile function.</li>
+</ul>
 <h3>Version 6.3</h3>
 <ul>
 <li>Compatibility with NVDA 2024.1.</li>
